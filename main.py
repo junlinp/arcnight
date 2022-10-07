@@ -1,57 +1,45 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import os.path
-
 import torch
-import win32gui
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtGui import *
 import sys
 import time
 import os
-hwnd_title = dict()
+import cv2
 
 
-def get_all_hwnd(hwnd, mouse):
-    if win32gui.IsWindow(hwnd) and win32gui.IsWindowEnabled(hwnd) and win32gui.IsWindowVisible(hwnd):
-        hwnd_title.update({hwnd: win32gui.GetWindowText(hwnd)})
 
 
-win32gui.EnumWindows(get_all_hwnd, 0)
-for h, t in hwnd_title.items():
-    if t != "":
-        print(h, t)
+
+def load_model(model_path : str):
+    model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path)
+    return model
+
+def load_image(image_path : str) :
+    img = cv2.imread(image_path)
+    return img
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
-app = QApplication(sys.argv)
-screen = QApplication.primaryScreen()
-
-
-def grabWindow(hwnd, output_file):
-    img = screen.grabWindow(hwnd).toImage()
-    img.save(output_file)
-
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    # print_hi('PyCharm')
-    hwnd = 263182
-    directory = "./grabImage"
 
-    if not os.path.exists(directory):
-        os.mkdir(directory)
+    if len(sys.argv) < 4:
+        print(f"Usage: {sys.argv[0]} path/to/model.pt path/to/image path/to/output")
+    else:
+        img = load_image(sys.argv[2])
+        model = load_model(sys.argv[1])
 
-    for i in range(10):
-        t = time.time()
-        hash_t = hash(t)
-        path = f"%s/%d.jpeg" % (directory, hash_t)
-        print(path)
-        grabWindow(hwnd,  path)
+        result = model(img)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+        print(result.xyxy[0])
+
+        first_result = result.xyxy[0]
+
+        if len(first_result) > 0:
+            print(result.xyxy[0][0][0])
+            print(result.xyxy[0][0][1])
+            x = 0.5 * (result.xyxy[0][0][0] + result.xyxy[0][0][2])
+            y = 0.5 * (result.xyxy[0][0][1] + result.xyxy[0][0][3])
+            with open(sys.argv[3], "w") as f:
+                f.write(f"{x.item()} {y.item()}")
+            #result.show()
+        else:
+            print("-1 -1")

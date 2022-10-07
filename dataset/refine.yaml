@@ -1,0 +1,7 @@
+
+path: /Users/panjunlin/repo/arcnight/dataset
+train: FN/images
+val: val/images
+
+nc: 3
+names: ['Begin', 'End', 'Action']
